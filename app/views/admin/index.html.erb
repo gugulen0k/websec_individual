@@ -1,0 +1,15 @@
+<h1>Админ-панель</h1>
+
+<p>Привет, <%= current_user.login %>!</p>
+
+<div>
+  <button onclick="alert('Функция 1')">Функция 1</button>
+  <button onclick="alert('Функция 2')">Функция 2</button>
+  <button onclick="alert('Функция 3')">Функция 3</button>
+</div>
+
+<form action="<%= logout_path %>" method="post" style="margin-top:20px;">
+  <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+  <input type="hidden" name="_method" value="delete" />
+  <button type="submit">Выйти</button>
+</form>

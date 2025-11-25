@@ -1,0 +1,15 @@
+<h1>Гостевая книга</h1>
+
+<%= link_to "Написать сообщение", guestbook_new_path %>
+
+<% @messages.each do |msg| %>
+  <div style="padding: 10px; margin-bottom: 10px; border: 1px solid #ccc;">
+    <strong><%= h msg.name %></strong> (<%= h msg.email %>)<br>
+    <small><%= msg.created_at %></small>
+    <hr>
+
+    <div>
+      <%= msg.message.html_safe %>
+    </div>
+  </div>
+<% end %>

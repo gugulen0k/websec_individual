@@ -1,0 +1,36 @@
+<h1>Вход</h1>
+
+<% if flash[:alert] %>
+  <p style="color:red;"><%= flash[:alert] %></p>
+<% end %>
+
+<form id="login-form" action="<%= login_path %>" method="post" novalidate>
+  <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+
+  <div>
+    <label for="login">Логин</label>
+    <input type="text" name="login" id="login" required minlength="3" maxlength="50" />
+  </div>
+
+  <div>
+    <label for="password">Пароль</label>
+    <input type="password" name="password" id="password" required minlength="6" />
+  </div>
+
+  <button type="submit">Войти</button>
+</form>
+
+<script>
+  // Простая client-side валидация
+  document.getElementById('login-form').addEventListener('submit', function(e) {
+    const login = document.getElementById('login').value.trim();
+    const password = document.getElementById('password').value;
+
+    // пример базовой проверки — длина, запрещённые символы
+    const badPattern = /[;'"\\]/; // простая демонстрация: блокируем символы обычно используемые в инъекциях
+    if (login.length < 3 || password.length < 6 || badPattern.test(login) || badPattern.test(password)) {
+      e.preventDefault();
+      alert('Проверьте ввод. Логин/пароль не проходят базовую валидацию.');
+    }
+  });
+</script>

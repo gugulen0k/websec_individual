@@ -1,0 +1,14 @@
+<h1>Написать сообщение</h1>
+
+<form action="/guestbook" method="post">
+  <%= csrf_meta_tags %>
+
+  <p>Имя: <input type="text" name="name"></p>
+  <p>Email: <input type="text" name="email"></p>
+  <p>Сообщение:</p>
+  <textarea name="message" rows="6" cols="50"></textarea>
+
+  <p><button type="submit">Отправить</button></p>
+</form>
+
+<hr>
