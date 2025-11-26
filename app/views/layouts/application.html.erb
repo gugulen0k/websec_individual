@@ -10,31 +10,72 @@
 
     <%= yield :head %>
 
-    <%# Enable PWA manifest for installable apps (make sure to enable in config/routes.rb too!) %>
-    <%#= tag.link rel: "manifest", href: pwa_manifest_path(format: :json) %>
-
     <link rel="icon" href="/icon.png" type="image/png">
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/icon.png">
 
-    <%# Includes all stylesheet files in app/assets/stylesheets %>
+    <%# Tailwind CSS %>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
     <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
   </head>
 
-  <body>
+  <body class="bg-gray-50 min-h-screen">
     <% if session[:user_id] %>
-      <form method="post" action="/logout">
-        <%= csrf_meta_tags %>
-        <input type="hidden" name="_method" value="delete">
-        <button>Выйти</button>
-      </form>
+      <nav class="bg-white border-b border-gray-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="flex justify-between items-center h-16">
+            <div class="flex items-center">
+              <h1 class="text-xl font-semibold text-gray-900">
+                <span class="hover:text-gray-700 transition-colors">Security App</span>
+              </h1>
+            </div>
+
+            <div class="flex items-center gap-6">
+              <span class="text-sm text-gray-600">
+                Привет, <span class="font-medium text-gray-900"><%= current_user.login %></span>
+              </span>
+
+              <div class="flex gap-4">
+                <% if session[:role] == "admin" %>
+                  <%= link_to "Админ-панель", admin_dashboard_path, class: "text-sm text-gray-700 hover:text-gray-900 transition-colors" %>
+                <% elsif session[:role] == "manager" %>
+                  <%= link_to "Панель менеджера", manager_dashboard_path, class: "text-sm text-gray-700 hover:text-gray-900 transition-colors" %>
+                <% else %>
+                  <%= link_to "Личный кабинет", user_dashboard_path, class: "text-sm text-gray-700 hover:text-gray-900 transition-colors" %>
+                <% end %>
+
+                <%= link_to "Гостевая книга", guestbook_path, class: "text-sm text-gray-700 hover:text-gray-900 transition-colors" %>
+
+                <%= button_to "Выйти", logout_path, method: :delete,
+                    class: "text-sm text-gray-600 hover:text-gray-900 transition-colors",
+                    form: { class: "inline" } %>
+              </div>
+            </div>
+          </div>
+        </div>
+      </nav>
     <% end %>
 
-    <% flash.each do |key, message| %>
-      <p style="color: <%= key == "alert" ? "red" : "green" %>;"><%= message %></p>
-    <% end %>
+    <main class="<%= session[:user_id] ? 'py-8' : '' %>">
+      <div class="<%= session[:user_id] ? 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8' : '' %>">
+        <% flash.each do |key, message| %>
+          <div class="alert alert-<%= key == 'alert' ? 'error' : key == 'notice' ? 'notice' : 'success' %>">
+            <%= message %>
+          </div>
+        <% end %>
 
-    <%= yield %>
+        <%= yield %>
+      </div>
+    </main>
+
+    <% unless session[:user_id] %>
+      <footer class="fixed bottom-0 w-full bg-white border-t border-gray-200 py-4">
+        <div class="max-w-7xl mx-auto px-4 text-center text-sm text-gray-500">
+          &copy; 2025 Web Security App
+        </div>
+      </footer>
+    <% end %>
   </body>
 </html>
