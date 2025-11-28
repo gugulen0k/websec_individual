@@ -1,0 +1,163 @@
+<div class="max-w-7xl mx-auto space-y-6">
+  <%# Заголовок и навигация %>
+  <div class="bg-white border border-gray-200 rounded-lg p-6">
+    <div class="flex items-center justify-between mb-4">
+      <div>
+        <h1 class="text-2xl font-semibold text-gray-900">Журнал ошибок приложения</h1>
+        <p class="text-gray-600 mt-1">Просмотр ошибок и предупреждений системы</p>
+      </div>
+
+      <div class="flex gap-3">
+        <%= link_to stats_admin_errors_path(date: @current_date), class: "px-4 py-2 bg-gray-100 text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-200 transition-colors" do %>
+          📊 Статистика
+        <% end %>
+
+        <%= link_to download_admin_errors_path(date: @current_date), class: "px-4 py-2 bg-gray-100 text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-200 transition-colors" do %>
+          ⬇️ Скачать лог
+        <% end %>
+      </div>
+    </div>
+
+    <%# Выбор даты %>
+    <div class="flex items-center gap-4 mb-4">
+      <%= form_with url: admin_errors_path, method: :get, class: "flex items-center gap-3" do |f| %>
+        <label class="text-sm font-medium text-gray-700">Дата:</label>
+        <%= f.date_field :date, value: @current_date, class: "px-3 py-2 border border-gray-200 rounded-lg" %>
+        <%= f.submit "Показать", class: "px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors" %>
+      <% end %>
+
+      <div class="flex gap-2 ml-auto">
+        <%= link_to "Вчера", admin_errors_path(date: @current_date - 1.day), class: "px-3 py-2 text-sm bg-gray-100 rounded-lg hover:bg-gray-200" %>
+        <%= link_to "Сегодня", admin_errors_path, class: "px-3 py-2 text-sm bg-gray-100 rounded-lg hover:bg-gray-200" %>
+      </div>
+    </div>
+
+    <%# Поиск %>
+    <%= form_with url: search_admin_errors_path, method: :get, class: "flex gap-3" do |f| %>
+      <%= f.hidden_field :date, value: @current_date %>
+      <%= f.text_field :query, placeholder: "Поиск в логах ошибок...", class: "flex-1 px-4 py-2 border border-gray-200 rounded-lg" %>
+      <%= f.submit "Искать", class: "px-6 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800" %>
+    <% end %>
+  </div>
+
+  <%# Статистика за день %>
+  <% if @statistics %>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="bg-white border border-gray-200 rounded-lg p-4">
+        <div class="text-gray-600 text-sm mb-1">Всего ошибок</div>
+        <div class="text-2xl font-semibold text-gray-900"><%= @statistics[:total_errors] %></div>
+      </div>
+
+      <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+        <div class="text-gray-600 text-sm mb-1">Критических</div>
+        <div class="text-2xl font-semibold text-red-600"><%= @statistics[:critical_errors] %></div>
+      </div>
+
+      <div class="bg-orange-50 border border-orange-200 rounded-lg p-4">
+        <div class="text-gray-600 text-sm mb-1">Ошибок</div>
+        <div class="text-2xl font-semibold text-orange-600"><%= @statistics[:errors] %></div>
+      </div>
+
+      <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+        <div class="text-gray-600 text-sm mb-1">Предупреждений</div>
+        <div class="text-2xl font-semibold text-yellow-600"><%= @statistics[:warnings] %></div>
+      </div>
+    </div>
+  <% end %>
+
+  <%# Список ошибок %>
+  <div class="bg-white border border-gray-200 rounded-lg p-6">
+    <h2 class="text-lg font-semibold text-gray-900 mb-4">
+      Ошибки за <%= @current_date.strftime('%d.%m.%Y') %>
+      <span class="text-sm font-normal text-gray-600">(<%= @errors.count %> записей)</span>
+    </h2>
+
+    <% if @errors.empty? %>
+      <div class="text-center py-12">
+        <div class="text-5xl mb-4">✅</div>
+        <p class="text-gray-600">Нет ошибок за выбранную дату</p>
+      </div>
+    <% else %>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b border-gray-200">
+              <th class="text-left py-3 px-4 font-medium text-gray-700">Время</th>
+              <th class="text-left py-3 px-4 font-medium text-gray-700">Уровень</th>
+              <th class="text-left py-3 px-4 font-medium text-gray-700">Тип ошибки</th>
+              <th class="text-left py-3 px-4 font-medium text-gray-700">Пользователь</th>
+              <th class="text-left py-3 px-4 font-medium text-gray-700">Сообщение</th>
+              <th class="text-left py-3 px-4 font-medium text-gray-700">Расположение</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @errors.each do |error| %>
+              <tr class="border-b border-gray-100 hover:bg-gray-50">
+                <td class="py-3 px-4 font-mono text-xs text-gray-600">
+                  <%= error[:timestamp].split(' ').last %>
+                </td>
+                <td class="py-3 px-4">
+                  <% case error[:level] %>
+                  <% when 'CRITICAL' %>
+                    <span class="px-2 py-1 bg-red-600 text-white rounded text-xs font-medium">CRITICAL</span>
+                  <% when 'ERROR' %>
+                    <span class="px-2 py-1 bg-orange-100 text-orange-700 rounded text-xs font-medium">ERROR</span>
+                  <% when 'WARN' %>
+                    <span class="px-2 py-1 bg-yellow-100 text-yellow-700 rounded text-xs font-medium">WARN</span>
+                  <% else %>
+                    <span class="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs font-medium"><%= error[:level] %></span>
+                  <% end %>
+                </td>
+                <td class="py-3 px-4 font-medium text-gray-900">
+                  <%= error[:error_type] %>
+                </td>
+                <td class="py-3 px-4 text-gray-700">
+                  <%= error[:user] %>
+                </td>
+                <td class="py-3 px-4 text-xs text-gray-600">
+                  <%= truncate(error[:message], length: 80) %>
+                </td>
+                <td class="py-3 px-4 font-mono text-xs text-gray-500">
+                  <%= truncate(error[:location], length: 40) %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% end %>
+  </div>
+
+  <%# Доступные лог-файлы %>
+  <div class="bg-white border border-gray-200 rounded-lg p-6">
+    <h2 class="text-lg font-semibold text-gray-900 mb-4">Доступные файлы логов ошибок</h2>
+
+    <% if @log_files.empty? %>
+      <div class="text-center py-8">
+        <p class="text-gray-600">Нет доступных файлов логов</p>
+      </div>
+    <% else %>
+      <div class="space-y-2">
+        <% @log_files.first(10).each do |file| %>
+          <div class="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100">
+            <div class="flex items-center gap-3">
+              <span class="text-2xl">🔴</span>
+              <div>
+                <div class="font-medium text-gray-900"><%= file[:name] %></div>
+                <div class="text-xs text-gray-600">
+                  <%= number_to_human_size(file[:size]) %> •
+                  Изменен: <%= file[:modified_at].strftime('%d.%m.%Y %H:%M') %>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex gap-2">
+              <%= link_to "Просмотр", admin_errors_path(date: file[:date]), class: "px-3 py-1 bg-gray-900 text-white text-sm rounded hover:bg-gray-800" %>
+              <%= link_to "Скачать", download_admin_errors_path(date: file[:date]), class: "px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded hover:bg-gray-200 border border-gray-200" %>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+</div>

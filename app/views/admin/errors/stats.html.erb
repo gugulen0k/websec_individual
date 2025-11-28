@@ -1,0 +1,123 @@
+<div class="max-w-7xl mx-auto space-y-6">
+  <div class="bg-white border border-gray-200 rounded-lg p-6">
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h1 class="text-2xl font-semibold text-gray-900">Статистика ошибок</h1>
+        <p class="text-gray-600 mt-1">Анализ ошибок и предупреждений системы</p>
+      </div>
+
+      <%= link_to "← Вернуться к логам ошибок", admin_errors_path(date: @date), class: "px-4 py-2 bg-gray-100 text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-200 transition-colors" %>
+    </div>
+
+    <%# Выбор даты %>
+    <%= form_with url: stats_admin_errors_path, method: :get, class: "flex items-center gap-3 mb-6" do |f| %>
+      <label class="text-sm font-medium text-gray-700">Дата:</label>
+      <%= f.date_field :date, value: @date, class: "px-3 py-2 border border-gray-200 rounded-lg" %>
+      <%= f.submit "Показать", class: "px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800" %>
+    <% end %>
+
+    <%# Основная статистика %>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+      <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+        <div class="text-gray-600 text-sm mb-1">Всего ошибок</div>
+        <div class="text-3xl font-semibold text-gray-900"><%= @statistics[:total_errors] %></div>
+      </div>
+
+      <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+        <div class="text-gray-600 text-sm mb-1">Критических</div>
+        <div class="text-3xl font-semibold text-red-600"><%= @statistics[:critical_errors] %></div>
+      </div>
+
+      <div class="bg-orange-50 border border-orange-200 rounded-lg p-4">
+        <div class="text-gray-600 text-sm mb-1">Ошибок</div>
+        <div class="text-3xl font-semibold text-orange-600"><%= @statistics[:errors] %></div>
+      </div>
+
+      <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+        <div class="text-gray-600 text-sm mb-1">Предупреждений</div>
+        <div class="text-3xl font-semibold text-yellow-600"><%= @statistics[:warnings] %></div>
+      </div>
+    </div>
+
+    <%# Ошибки по типам %>
+    <div class="mb-8">
+      <h2 class="text-lg font-semibold text-gray-900 mb-4">Распределение по типам ошибок</h2>
+      <div class="space-y-2">
+        <% @statistics[:errors_by_type].sort_by { |_, count| -count }.first(10).each do |error_type, count| %>
+          <% percent = (@statistics[:total_errors] > 0 ? (count.to_f / @statistics[:total_errors] * 100).round : 0) %>
+          <div class="flex items-center gap-3">
+            <div class="w-48 text-sm font-medium text-gray-700 truncate" title="<%= error_type %>">
+              <%= error_type %>
+            </div>
+            <div class="flex-1">
+              <div class="bg-gray-200 rounded-full h-6 overflow-hidden">
+                <div class="bg-red-500 h-full flex items-center px-2" style="width: <%= [percent, 100].min %>%">
+                  <span class="text-xs font-medium text-white"><%= count %></span>
+                </div>
+              </div>
+            </div>
+            <div class="w-16 text-right text-sm text-gray-600">
+              <%= percent %>%
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <%# Активность по часам %>
+    <div class="mb-8">
+      <h2 class="text-lg font-semibold text-gray-900 mb-4">Ошибки по часам</h2>
+      <div class="grid grid-cols-12 gap-2">
+        <% (0..23).each do |hour| %>
+          <% count = @statistics[:errors_by_hour][hour] || 0 %>
+          <% max_count = @statistics[:errors_by_hour].values.max || 1 %>
+          <% height_percent = (count.to_f / max_count * 100).round %>
+
+          <div class="text-center">
+            <div class="h-32 flex items-end justify-center">
+              <div
+                class="w-full bg-red-500 rounded-t transition-all hover:bg-red-600"
+                style="height: <%= height_percent %>%"
+                title="<%= hour %>:00 - <%= count %> ошибок"
+              ></div>
+            </div>
+            <div class="text-xs text-gray-600 mt-1"><%= hour %></div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <%# Статистика за неделю %>
+    <div>
+      <h2 class="text-lg font-semibold text-gray-900 mb-4">Динамика за неделю</h2>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b border-gray-200">
+              <th class="text-left py-3 px-4 font-medium text-gray-700">Дата</th>
+              <th class="text-right py-3 px-4 font-medium text-gray-700">Всего</th>
+              <th class="text-right py-3 px-4 font-medium text-gray-700">Критич.</th>
+              <th class="text-right py-3 px-4 font-medium text-gray-700">Ошибок</th>
+              <th class="text-right py-3 px-4 font-medium text-gray-700">Предупр.</th>
+              <th class="text-right py-3 px-4 font-medium text-gray-700">Типов</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @weekly_stats.each do |day| %>
+              <tr class="border-b border-gray-100 hover:bg-gray-50">
+                <td class="py-3 px-4 font-medium">
+                  <%= link_to day[:date].strftime('%d.%m.%Y'), admin_errors_path(date: day[:date]), class: "text-blue-600 hover:underline" %>
+                </td>
+                <td class="py-3 px-4 text-right text-gray-900"><%= day[:stats][:total_errors] %></td>
+                <td class="py-3 px-4 text-right text-red-600"><%= day[:stats][:critical_errors] %></td>
+                <td class="py-3 px-4 text-right text-orange-600"><%= day[:stats][:errors] %></td>
+                <td class="py-3 px-4 text-right text-yellow-600"><%= day[:stats][:warnings] %></td>
+                <td class="py-3 px-4 text-right text-gray-600"><%= day[:stats][:unique_error_types] %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

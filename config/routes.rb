@@ -14,5 +14,24 @@ Rails.application.routes.draw do
   get "/manager", to: "manager#dashboard", as: :manager_dashboard
   get "/user",    to: "user#dashboard",    as: :user_dashboard
 
+  # Админ-панель с логами
+  namespace :admin do
+    resources :logs, only: [ :index ] do
+      collection do
+        get :search
+        get :download
+        get :stats
+      end
+    end
+
+    resources :errors, only: [ :index ] do
+      collection do
+        get :search
+        get :download
+        get :stats
+      end
+    end
+  end
+
   get "admin", to: "admin#index"
 end

@@ -1,0 +1,168 @@
+<div class="max-w-7xl mx-auto space-y-6">
+  <%# Заголовок и навигация %>
+  <div class="bg-white border border-gray-200 rounded-lg p-6">
+    <div class="flex items-center justify-between mb-4">
+      <div>
+        <h1 class="text-2xl font-semibold text-gray-900">Журнал безопасности</h1>
+        <p class="text-gray-600 mt-1">Просмотр действий пользователей в системе</p>
+      </div>
+
+      <div class="flex gap-3">
+        <%= link_to stats_admin_logs_path(date: @current_date), class: "px-4 py-2 bg-gray-100 text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-200 transition-colors" do %>
+          📊 Статистика
+        <% end %>
+
+        <%= link_to download_admin_logs_path(date: @current_date), class: "px-4 py-2 bg-gray-100 text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-200 transition-colors" do %>
+          ⬇️ Скачать лог
+        <% end %>
+      </div>
+    </div>
+
+    <%# Выбор даты %>
+    <div class="flex items-center gap-4 mb-4">
+      <%= form_with url: admin_logs_path, method: :get, class: "flex items-center gap-3" do |f| %>
+        <label class="text-sm font-medium text-gray-700">Дата:</label>
+        <%= f.date_field :date, value: @current_date, class: "px-3 py-2 border border-gray-200 rounded-lg" %>
+        <%= f.submit "Показать", class: "px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors" %>
+      <% end %>
+
+      <div class="flex gap-2 ml-auto">
+        <%= link_to "Вчера", admin_logs_path(date: @current_date - 1.day), class: "px-3 py-2 text-sm bg-gray-100 rounded-lg hover:bg-gray-200" %>
+        <%= link_to "Сегодня", admin_logs_path, class: "px-3 py-2 text-sm bg-gray-100 rounded-lg hover:bg-gray-200" %>
+      </div>
+    </div>
+
+    <%# Поиск %>
+    <%= form_with url: search_admin_logs_path, method: :get, class: "flex gap-3" do |f| %>
+      <%= f.hidden_field :date, value: @current_date %>
+      <%= f.text_field :query, placeholder: "Поиск в логах...", class: "flex-1 px-4 py-2 border border-gray-200 rounded-lg" %>
+      <%= f.submit "Искать", class: "px-6 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800" %>
+    <% end %>
+  </div>
+
+  <%# Статистика за день %>
+  <% if @statistics %>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="bg-white border border-gray-200 rounded-lg p-4">
+        <div class="text-gray-600 text-sm mb-1">Всего событий</div>
+        <div class="text-2xl font-semibold text-gray-900"><%= @statistics[:total_events] %></div>
+      </div>
+
+      <div class="bg-white border border-gray-200 rounded-lg p-4">
+        <div class="text-gray-600 text-sm mb-1">Входов</div>
+        <div class="text-2xl font-semibold text-green-600"><%= @statistics[:logins] %></div>
+      </div>
+
+      <div class="bg-white border border-gray-200 rounded-lg p-4">
+        <div class="text-gray-600 text-sm mb-1">Неудачных попыток</div>
+        <div class="text-2xl font-semibold text-red-600"><%= @statistics[:failed_logins] %></div>
+      </div>
+
+      <div class="bg-white border border-gray-200 rounded-lg p-4">
+        <div class="text-gray-600 text-sm mb-1">Уникальных IP</div>
+        <div class="text-2xl font-semibold text-gray-900"><%= @statistics[:unique_ips] %></div>
+      </div>
+    </div>
+  <% end %>
+
+  <%# Список логов %>
+  <div class="bg-white border border-gray-200 rounded-lg p-6">
+    <h2 class="text-lg font-semibold text-gray-900 mb-4">
+      События за <%= @current_date.strftime('%d.%m.%Y') %>
+      <span class="text-sm font-normal text-gray-600">(<%= @logs.count %> записей)</span>
+    </h2>
+
+    <% if @logs.empty? %>
+      <div class="text-center py-12">
+        <div class="text-5xl mb-4">📭</div>
+        <p class="text-gray-600">Нет записей за выбранную дату</p>
+      </div>
+    <% else %>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b border-gray-200">
+              <th class="text-left py-3 px-4 font-medium text-gray-700">Время</th>
+              <th class="text-left py-3 px-4 font-medium text-gray-700">Уровень</th>
+              <th class="text-left py-3 px-4 font-medium text-gray-700">Пользователь</th>
+              <th class="text-left py-3 px-4 font-medium text-gray-700">IP</th>
+              <th class="text-left py-3 px-4 font-medium text-gray-700">Действие</th>
+              <th class="text-left py-3 px-4 font-medium text-gray-700">Детали</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @logs.each do |log| %>
+              <tr class="border-b border-gray-100 hover:bg-gray-50">
+                <td class="py-3 px-4 font-mono text-xs text-gray-600">
+                  <%= log[:timestamp].split(' ').last %>
+                </td>
+                <td class="py-3 px-4">
+                  <% case log[:level] %>
+                  <% when 'INFO' %>
+                    <span class="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium">INFO</span>
+                  <% when 'WARN' %>
+                    <span class="px-2 py-1 bg-yellow-100 text-yellow-700 rounded text-xs font-medium">WARN</span>
+                  <% when 'ERROR' %>
+                    <span class="px-2 py-1 bg-red-100 text-red-700 rounded text-xs font-medium">ERROR</span>
+                  <% when 'CRITICAL' %>
+                    <span class="px-2 py-1 bg-red-600 text-white rounded text-xs font-medium">CRITICAL</span>
+                  <% end %>
+                </td>
+                <td class="py-3 px-4 font-medium text-gray-900">
+                  <%= log[:user] %>
+                </td>
+                <td class="py-3 px-4 font-mono text-xs text-gray-600">
+                  <%= log[:ip] %>
+                </td>
+                <td class="py-3 px-4">
+                  <% case log[:action] %>
+                  <% when 'LOGIN' %>
+                    <span class="text-green-600 font-medium">🔓 Вход</span>
+                  <% when 'LOGOUT' %>
+                    <span class="text-gray-600 font-medium">🔒 Выход</span>
+                  <% when 'FAILED_LOGIN' %>
+                    <span class="text-red-600 font-medium">❌ Неудачный вход</span>
+                  <% when 'UNAUTHORIZED_ACCESS' %>
+                    <span class="text-orange-600 font-medium">⚠️ Несанкц. доступ</span>
+                  <% else %>
+                    <span class="text-gray-700"><%= log[:action] %></span>
+                  <% end %>
+                </td>
+                <td class="py-3 px-4 text-xs text-gray-600">
+                  <%= truncate(log[:details], length: 100) %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% end %>
+  </div>
+
+  <%# Доступные лог-файлы %>
+  <div class="bg-white border border-gray-200 rounded-lg p-6">
+    <h2 class="text-lg font-semibold text-gray-900 mb-4">Доступные лог-файлы</h2>
+
+    <div class="space-y-2">
+      <% @log_files.first(10).each do |file| %>
+        <div class="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100">
+          <div class="flex items-center gap-3">
+            <span class="text-2xl">📄</span>
+            <div>
+              <div class="font-medium text-gray-900"><%= file[:name] %></div>
+              <div class="text-xs text-gray-600">
+                <%= number_to_human_size(file[:size]) %> •
+                Изменен: <%= file[:modified_at].strftime('%d.%m.%Y %H:%M') %>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex gap-2">
+            <%= link_to "Просмотр", admin_logs_path(date: file[:date]), class: "px-3 py-1 bg-gray-900 text-white text-sm rounded hover:bg-gray-800" %>
+            <%= link_to "Скачать", download_admin_logs_path(date: file[:date]), class: "px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded hover:bg-gray-200 border border-gray-200" %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
